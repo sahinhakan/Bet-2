@@ -1,10 +1,13 @@
 var Game = artifacts.require("./Game.sol");
 var BetFactory = artifacts.require("./BetFactory");
 var BetToken = artifacts.require("./BetToken");
+var Stake = artifacts.require("./Stake");
 
-module.exports = async function(deployer) {
+module.exports = async function(deployer, network, accounts) {
 
   await deployer.deploy(BetToken);
+
+  await deployer.deploy(Stake, accounts[0]);
 
   await deployer.deploy(BetFactory);
 

@@ -1,7 +1,66 @@
+const BetToken = artifacts.require("BetToken");
+const Stake = artifacts.require("Stake");
 const Game = artifacts.require("Game");
 const BetFactory = artifacts.require("BetFactory");
-let game, game0Address, game0Instance, betFactory, totalAmount, amount;
+let game, game0Address, game0Instance, betFactory, totalAmount, amount, betToken, stake
 const team1 = "Beşiktaş", team2 = "Fenerbahçe";
+
+const { 
+    expectRevert, 
+    time, 
+    constants 
+  } = require('@openzeppelin/test-helpers'); 
+
+contract("Bet Token", accounts => {
+    it("Deploy contract", async () => {
+        betToken = await BetToken.deployed();
+        assert.ok(betToken.address)
+    });
+    
+    it("Total Supply Check", async () => {
+        let totalSupply = await betToken.balanceOf(accounts[0]);
+        assert.ok(totalSupply, (1000000 * 10 ** 18).toString());
+    });
+});
+
+contract("Stake", accounts => {
+    it("Deploy contract", async () => {
+        stake = await Stake.deployed();
+        assert.ok(stake.address)
+    });
+    
+    it("Deposit", async () => {
+        let depositAmount = web3.utils.toWei('100000');
+        await betToken.approve(stake.address, depositAmount);
+        await stake.deposit(betToken.address, depositAmount);
+        let account0BetBalance = betToken.balanceOf(accounts[0]);
+        let stakeBetBalance = betToken.balanceOf(stake.address);
+        assert.ok(account0BetBalance, web3.utils.toWei('900000'));
+        assert.ok(stakeBetBalance,    web3.utils.toWei('100000'));
+    });
+    
+    it("Withdraw", async () => {
+        let depositAmount = web3.utils.toWei('100000');
+
+        await expectRevert(
+            stake.withdraw(betToken.address, depositAmount, {from: accounts[1]}),
+            'only owner'
+        );
+
+        await expectRevert(
+            stake.withdraw(betToken.address, depositAmount),
+            'too early'
+        );
+
+        await time.increase(time.duration.years(1));
+
+        await stake.withdraw(betToken.address, depositAmount);
+        let account0BetBalance = betToken.balanceOf(accounts[0]);
+        let stakeBetBalance = betToken.balanceOf(stake.address);
+        assert.ok(account0BetBalance,  web3.utils.toWei('1000000'));
+        assert.ok(stakeBetBalance, web3.utils.toWei('0'));
+    });
+});
 
 contract("BetFactory", accounts => {
     it("Deploy contract", async () => {
