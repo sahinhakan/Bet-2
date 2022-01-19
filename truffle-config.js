@@ -18,8 +18,8 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
-//
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const privateKeys = ['0x7ecb8d1df7d6c979cfa8708f9ba254fa2ade3c0bc49ec2b18a50225519ba1f95'];
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
@@ -50,7 +50,7 @@ module.exports = {
       host: "127.0.0.1",
       port: 7545,
       network_id: "*" // Match any network id
-    }
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -76,6 +76,12 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+    bscTestnet: {
+      provider: () => new HDWalletProvider(privateKeys, 'https://data-seed-prebsc-1-s1.binance.org:8545'),
+      network_id: 97,
+      skipDryRun: true
+    }
+
   },
 
   // Set default mocha options here, use special reporters etc.
