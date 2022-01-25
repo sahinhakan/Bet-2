@@ -1,8 +1,9 @@
 const BetToken = artifacts.require("BetToken");
 const Stake = artifacts.require("Stake");
+const StakeV2 = artifacts.require("StakeV2");
 const Game = artifacts.require("Game");
 const BetFactory = artifacts.require("BetFactory");
-let game, game0Address, game0Instance, betFactory, totalAmount, amount, betToken, stake
+let game, game0Address, game0Instance, betFactory, totalAmount, amount, betToken, stake, stakeV2;
 const team1 = "Beşiktaş", team2 = "Fenerbahçe";
 
 const { 
@@ -19,7 +20,7 @@ contract("Bet Token", accounts => {
     
     it("Total Supply Check", async () => {
         let totalSupply = await betToken.balanceOf(accounts[0]);
-        assert.ok(totalSupply, (1000000 * 10 ** 18).toString());
+        assert.ok(totalSupply, (700000 * 10 ** 18).toString());
     });
 });
 
@@ -35,7 +36,7 @@ contract("Stake", accounts => {
         await stake.deposit(betToken.address, depositAmount);
         let account0BetBalance = betToken.balanceOf(accounts[0]);
         let stakeBetBalance = betToken.balanceOf(stake.address);
-        assert.ok(account0BetBalance, web3.utils.toWei('900000'));
+        assert.ok(account0BetBalance, web3.utils.toWei('600000'));
         assert.ok(stakeBetBalance,    web3.utils.toWei('100000'));
     });
     
@@ -57,7 +58,7 @@ contract("Stake", accounts => {
         await stake.withdraw(betToken.address, depositAmount);
         let account0BetBalance = betToken.balanceOf(accounts[0]);
         let stakeBetBalance = betToken.balanceOf(stake.address);
-        assert.ok(account0BetBalance,  web3.utils.toWei('1000000'));
+        assert.ok(account0BetBalance,  web3.utils.toWei('700000'));
         assert.ok(stakeBetBalance, web3.utils.toWei('0'));
     });
 });
