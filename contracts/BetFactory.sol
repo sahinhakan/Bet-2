@@ -32,4 +32,8 @@ contract BetFactory{
         _name = Game(address(games[0])).name1();
     }
 
+    function gamesCount() public view returns (uint _length){
+        _length = games.length;
+    }
+
 }

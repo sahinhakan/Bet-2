@@ -31,11 +31,14 @@ module.exports = async function(deployer, network, accounts) {
   //İleride bu kontrattan kopya yaratmak için deploy ediyorum bunu sadece. Takım isimlerini constructor'a göndermesem daha iyi olacak gibi.
   await deployer.deploy(Game, "asd", "fgh");
 
+
+
   //devamındaki kodlara gerek yok. Test amaçlı yazılanları buraya yazmamak gerekiyor. 
   //Sadece kontratı deploy ettiğimiz gibi çalıştırmak istediğimiz komutlar varsa onları yazalım
 
-  //const betFactory = await BetFactory.deployed();
-  //await betFactory.createGame("Beşiktaş", "Fenerbahçe");
+  const betFactory = await BetFactory.deployed();
+  await betFactory.createGame("Beşiktaş", "Fenerbahçe");
+  await betFactory.createGame("Galatasaray", "Trabzonspor");
 
   //const name1 = await betFactory.getName1();
   //console.log(name1);

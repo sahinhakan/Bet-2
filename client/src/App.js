@@ -1,5 +1,7 @@
 import React, { Component } from "react";
-import logo from './logo.svg';
+//import logo from './logo.svg';
+import Navbar from './Navbar';
+import GameList from './GameList';
 
 import GameContract from "./contracts/Game.json";
 import BetFactoryContract from "./contracts/BetFactory.json";
@@ -8,8 +10,9 @@ import getWeb3 from "./getWeb3";
 
 import './App.css';
 
+
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { storageValue: 0, web3: null, accounts: null, contract: null, contracts: null, games: null };
 
   componentDidMount = async () => {
     try {
@@ -21,15 +24,27 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = GameContract.networks[networkId];
-      const instance = new web3.eth.Contract(
+      let gameContractDeployedNetwork = GameContract.networks[networkId];
+      const gameInstance = new web3.eth.Contract(
         GameContract.abi,
-        deployedNetwork && deployedNetwork.address,
+        gameContractDeployedNetwork && gameContractDeployedNetwork.address,
       );
+
+      let betFactoryContractDeployedNetwork = BetFactoryContract.networks[networkId];
+      const betFactoryInstance = new web3.eth.Contract(
+        BetFactoryContract.abi,
+        betFactoryContractDeployedNetwork && betFactoryContractDeployedNetwork.address
+      )
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
+      this.setState({ web3, accounts,
+        contracts: {
+          betFactory : betFactoryInstance
+        },
+        contract : gameInstance,
+        games: []
+      }, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -40,38 +55,64 @@ class App extends Component {
   };
 
   runExample = async () => {
-    const { accounts, contract, web3 } = this.state;
+    const { accounts, contract, web3, games } = this.state;
+    const betFactory = this.state.contracts.betFactory;
+    let gamesLength = await betFactory.methods.gamesCount().call();
+
+    for(var i = 0; i < gamesLength; i++){
+      let oGame = {};
+      let address = await betFactory.methods.games(i).call();
+      let instance = new web3.eth.Contract(GameContract.abi, address);
+      oGame.address = address;
+      oGame.instance = instance;
+      oGame.name1 = await instance.methods.name1().call();
+      oGame.name2 = await instance.methods.name2().call();
+      oGame.totalBet1 = web3.utils.fromWei(await instance.methods.totalBet1().call(), "ether");
+      oGame.totalBet0 = web3.utils.fromWei(await instance.methods.totalBet0().call(), "ether");
+      oGame.totalBet2 = web3.utils.fromWei(await instance.methods.totalBet2().call(), "ether");
+      oGame.rate1 = (await instance.methods.rate1().call()) / 1000;
+      oGame.rate0 = (await instance.methods.rate0().call()) / 1000;
+      oGame.rate2 = (await instance.methods.rate2().call()) / 1000;
+      games.push(oGame);
+    }
+    this.setState({ games });
+
+
 
     // Stores a given value, 5 by default.
     //await contract.methods.set(5).send({ from: accounts[0] });
-    let totalBet1 = web3.utils.fromWei(await contract.methods.totalBet1().call(), "ether");
+    /* let totalBet1 = web3.utils.fromWei(await contract.methods.totalBet1().call(), "ether");
     let totalBet0 = web3.utils.fromWei(await contract.methods.totalBet0().call(), "ether");
     let totalBet2 = web3.utils.fromWei(await contract.methods.totalBet2().call(), "ether");
     let rate1 = (await contract.methods.rate1().call()) / 1000;
     let rate0 = (await contract.methods.rate0().call()) / 1000;
     let rate2 = (await contract.methods.rate2().call()) / 1000;
     let name1 = await contract.methods.name1().call();
-    let name2 = await contract.methods.name2().call();
+    let name2 = await contract.methods.name2().call(); */
 
-    this.setState({ totalBet1, totalBet0, totalBet2, rate1, rate0, rate2, name1, name2 });
+    //this.setState({ totalBet1, totalBet0, totalBet2, rate1, rate0, rate2, name1, name2, games });
   };
 
-  bet = async (_betSelection) => {
-    const { accounts, contract, web3 } = this.state;
+  bet = async (_betSelection, data) => {
+    const { accounts, contract, web3, games } = this.state;
 
-    await contract.methods.bet(_betSelection).send({
+    await data.instance.methods.bet(_betSelection).send({
       from: accounts[0],
-      value: web3.utils.toWei("1", "ether")
+      value: web3.utils.toWei("0.1", "ether")
     })
 
-    let totalBet1 = web3.utils.fromWei(await contract.methods.totalBet1().call(), "ether");
-    let totalBet0 = web3.utils.fromWei(await contract.methods.totalBet0().call(), "ether");
-    let totalBet2 = web3.utils.fromWei(await contract.methods.totalBet2().call(), "ether");
-    let rate1 = (await contract.methods.rate1().call()) / 1000;
-    let rate0 = (await contract.methods.rate0().call()) / 1000;
-    let rate2 = (await contract.methods.rate2().call()) / 1000;
+    const gameIndex = games.findIndex( item => {
+      return item.address == data.address;
+    })
 
-    this.setState({ totalBet1, totalBet0, totalBet2, rate1, rate0, rate2 });
+    games[gameIndex].totalBet1 = web3.utils.fromWei(await data.instance.methods.totalBet1().call(), "ether");
+    games[gameIndex].totalBet0 = web3.utils.fromWei(await data.instance.methods.totalBet0().call(), "ether");
+    games[gameIndex].totalBet2 = web3.utils.fromWei(await data.instance.methods.totalBet2().call(), "ether");
+    games[gameIndex].rate1 = (await data.instance.methods.rate1().call()) / 1000;
+    games[gameIndex].rate0 = (await data.instance.methods.rate0().call()) / 1000;
+    games[gameIndex].rate2 = (await data.instance.methods.rate2().call()) / 1000;
+
+    this.setState({ games });
   }
 
   render() {
@@ -80,75 +121,8 @@ class App extends Component {
     }
     return (
       <div className="App">
-        {/* <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div> */
-        }
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th>Ev Sahibi (1)</th>
-              <th>Beraberlik (0)</th>
-              <th>Deplasman (2)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>14.04.2022</td>
-              <td>{this.state.name1}</td>
-              <td>X</td>
-              <td>{this.state.name2}</td>
-            </tr>
-            <tr>
-              <td>Oran</td>
-              <td>{this.state.rate1}</td>
-              <td>{this.state.rate0}</td>
-              <td>{this.state.rate2}</td>
-            </tr>
-            <tr>
-              <td>Toplam Bahis</td>
-              <td>{this.state.totalBet1} ETH</td>
-              <td>{this.state.totalBet0} ETH</td>
-              <td>{this.state.totalBet2} ETH</td>
-            </tr>
-            <tr>
-              <td></td>
-              <td>
-                <button
-                  onClick={(event) => {
-                    event.preventDefault();
-                    this.bet(1);
-                  }}
-                >+1 ETH</button>
-              </td>
-              <td>
-                <button
-                  onClick={(event) => {
-                    event.preventDefault();
-                    this.bet(0);
-                  }}
-                >+1 ETH</button>
-              </td>
-              <td>
-                <button
-                  onClick={(event) => {
-                    event.preventDefault();
-                    this.bet(2);
-                  }}
-                >+1 ETH</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <Navbar />
+        <GameList games={this.state.games} bet={this.bet}/>
       </div>
     );
   }
