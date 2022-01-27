@@ -3,11 +3,27 @@ import ReactDOM from 'react-dom';
 import 'bootstrap/dist/css/bootstrap.css';
 import './index.css';
 import App from './App';
+import GameList from './GameList';
+import Stake from './Stake';
 import reportWebVitals from './reportWebVitals';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-ReactDOM.render(
+/* ReactDOM.render(
   <React.StrictMode>
     <App />
+  </React.StrictMode>,
+  document.getElementById('root')
+); */
+ReactDOM.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<App/>} >
+          <Route path="/games" element={<GameList/>} />
+          <Route path="/stake" element={<Stake/>} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   </React.StrictMode>,
   document.getElementById('root')
 );
